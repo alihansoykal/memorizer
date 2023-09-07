@@ -19,17 +19,20 @@ class SentenceAdapter extends TypeAdapter<Sentence> {
     return Sentence(
       text: fields[0] as String,
       meaning: fields[1] as String,
+      language: fields[2] as Language?,
     );
   }
 
   @override
   void write(BinaryWriter writer, Sentence obj) {
     writer
-      ..writeByte(2)
+      ..writeByte(3)
       ..writeByte(0)
       ..write(obj.text)
       ..writeByte(1)
-      ..write(obj.meaning);
+      ..write(obj.meaning)
+      ..writeByte(2)
+      ..write(obj.language);
   }
 
   @override

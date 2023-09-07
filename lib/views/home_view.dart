@@ -40,6 +40,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  Language _selectedLanguage = Language.english;
+  DropdownButton<Language> _languageDropdown([Language? initialLanguage]) {
+    return DropdownButton<Language>(
+      value: initialLanguage ?? _selectedLanguage,
+      items: Language.values.map((Language language) {
+        return DropdownMenuItem<Language>(
+          value: language,
+          child: Text(language.toString().split('.').last),
+        );
+      }).toList(),
+      onChanged: (Language? newLanguage) {
+        setState(() {
+          _selectedLanguage = newLanguage!;
+        });
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -121,57 +139,35 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  Future<bool> _showDeleteDialog(BuildContext context) async {
-    return await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('Delete?'),
-              content: const Text('Do you really want to delete this item?'),
-              actions: <Widget>[
-                ElevatedButton(
-                  child: const Text('No'),
-                  onPressed: () {
-                    Navigator.of(context).pop(false);
-                  },
-                ),
-                ElevatedButton(
-                  child: const Text('Yes'),
-                  onPressed: () {
-                    Navigator.of(context).pop(true);
-                  },
-                ),
-              ],
-            );
-          },
-        ) ??
-        false;
-  }
-
   _editSentence(Sentence sentence, int index) async {
     TextEditingController textController =
         TextEditingController(text: sentence.text);
     TextEditingController meaningController =
         TextEditingController(text: sentence.meaning);
+    Language? selectedLanguage = sentence.language;
 
-    return showDialog(
+    await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text('Edit Sentence'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: textController,
-                decoration: const InputDecoration(labelText: 'Sentence'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: meaningController,
-                decoration: const InputDecoration(labelText: 'Meaning'),
-              ),
-            ],
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: textController,
+                  decoration: const InputDecoration(labelText: 'Sentence'),
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  controller: meaningController,
+                  decoration: const InputDecoration(labelText: 'Meaning'),
+                ),
+                const SizedBox(height: 10),
+                _languageDropdown(sentence.language)
+              ],
+            ),
           ),
           actions: [
             ElevatedButton(
@@ -183,22 +179,14 @@ class _HomePageState extends State<HomePage> {
             ElevatedButton(
               child: const Text('Update'),
               onPressed: () {
-                if (index < widget.box.length) {
-                  // Check if the index is still valid
-                  final updatedSentence = Sentence(
-                    text: textController.text,
-                    meaning: meaningController.text,
-                  );
-
-                  // Update the item in Hive box and refresh the list
-                  widget.box.putAt(index, updatedSentence);
-                  setState(() {});
-
-                  Navigator.of(context).pop();
-                } else {
-                  print("Index out of range error. Unable to update.");
-                  Navigator.of(context).pop();
-                }
+                final updatedSentence = Sentence(
+                  text: textController.text,
+                  meaning: meaningController.text,
+                  language: selectedLanguage,
+                );
+                widget.box.putAt(index, updatedSentence);
+                setState(() {});
+                Navigator.of(context).pop();
               },
             ),
           ],
@@ -210,40 +198,55 @@ class _HomePageState extends State<HomePage> {
   _addSentence() async {
     TextEditingController textController = TextEditingController();
     TextEditingController meaningController = TextEditingController();
+    Language selectedLanguage = Language.english;
 
     await showDialog(
-        context: context,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text('Add Sentence'),
-            content: Column(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Add Sentence'),
+          content: SingleChildScrollView(
+            child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: textController,
                   decoration: const InputDecoration(labelText: 'Sentence'),
                 ),
+                const SizedBox(height: 10),
                 TextField(
                   controller: meaningController,
                   decoration: const InputDecoration(labelText: 'Meaning'),
                 ),
+                const SizedBox(height: 10),
+                _languageDropdown(Language.english)
               ],
             ),
-            actions: [
-              ElevatedButton(
-                child: const Text('Add'),
-                onPressed: () {
-                  final sentence = Sentence(
-                      text: textController.text,
-                      meaning: meaningController.text);
-                  widget.box.add(sentence);
-                  Navigator.of(context).pop();
-                  setState(() {});
-                },
-              ),
-            ],
-          );
-        });
+          ),
+          actions: [
+            ElevatedButton(
+              child: const Text('Cancel'),
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+            ),
+            ElevatedButton(
+              child: const Text('Add'),
+              onPressed: () {
+                final sentence = Sentence(
+                  text: textController.text,
+                  meaning: meaningController.text,
+                  language: selectedLanguage,
+                );
+                widget.box.add(sentence);
+                setState(() {});
+                Navigator.of(context).pop();
+              },
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
