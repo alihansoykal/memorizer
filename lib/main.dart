@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
-import 'package:memorizer/views/home_view.dart';
+import 'package:memorizer/stores/sentence_store.dart';
+import 'package:memorizer/views/sentence_view.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'models/sentence.dart';
@@ -10,16 +11,20 @@ void main() async {
   final appDocumentDir = await getApplicationDocumentsDirectory();
   Hive.init(appDocumentDir.path);
   Hive.registerAdapter(SentenceAdapter());
-  runApp(const MyApp());
+  final sentencesBox = await Hive.openBox<Sentence>('sentences');
+  final sentenceStore = SentenceStore(sentencesBox);
+  runApp(MyApp(sentenceStore: sentenceStore));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  final SentenceStore sentenceStore;
+
+  const MyApp({super.key, required this.sentenceStore});
+
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: 'Memorizer',
-      home: HomeView(),
+    return MaterialApp(
+      home: SentencePage(sentenceStore: sentenceStore),
     );
   }
 }
